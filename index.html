@@ -47,8 +47,18 @@
       font-weight: 700;
       color: var(--white);
       letter-spacing: 0.01em;
+      text-decoration: none;
     }
     .nav-logo span { color: var(--amber); }
+    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    .nav-link {
+      color: rgba(255,255,255,0.78);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--white); }
     .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
     .btn-ghost {
       background: transparent;
@@ -139,12 +149,6 @@
       z-index: 2;
     }
     .btn-large { padding: 0.8rem 2rem; font-size: 1rem; border-radius: 8px; }
-    .hero-landscape {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      width: 100%;
-      pointer-events: none;
-    }
     .about {
       padding: 5rem 2rem;
       max-width: 980px;
@@ -237,19 +241,29 @@
     .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
     .footer-logo span { color: var(--amber); }
     .footer-copy { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin: 1rem 0; }
+    .footer-links a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.85rem; }
+    .footer-links a:hover { color: var(--white); }
+    .nav-toggle { display: none; }
     @media (max-width: 700px) {
       .about-grid { grid-template-columns: 1fr; gap: 3rem; }
       .photo-frame { margin-top: 1rem; }
       nav { padding: 0 1rem; }
+      .nav-links { display: none; }
     }
   </style>
 </head>
 <body>
   <nav>
-    <div class="nav-logo">All Occasion <span>Camping</span></div>
+    <a href="index.html" class="nav-logo">All Occasion <span>Camping</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="info.html" class="nav-link">Information</a>
+      <a href="booking.html" class="nav-link">Booking</a>
+    </div>
     <div class="nav-actions">
-      <a href="#" class="btn-ghost" onclick="alert('Login coming soon!'); return false;">Log in</a>
-      <a href="#" class="btn-primary" onclick="alert('Sign up coming soon!'); return false;">Sign up</a>
+      <a href="login.html" class="btn-ghost">Log in</a>
+      <a href="login.html" class="btn-primary">Sign up</a>
     </div>
   </nav>
 
@@ -260,7 +274,7 @@
     <p class="hero-sub">Premium camping trailer rentals for weekend getaways, family trips, and everything in between.</p>
     <div class="hero-cta">
       <a href="#about" class="btn-primary btn-large">See the Trailer</a>
-      <a href="#contact" class="btn-ghost btn-large">Get in Touch</a>
+      <a href="booking.html" class="btn-ghost btn-large">Book Now</a>
     </div>
   </section>
 
@@ -276,21 +290,30 @@
           <div class="feature-item"><div class="feature-dot"></div><span class="feature-text">Climate control &amp; heating</span></div>
           <div class="feature-item"><div class="feature-dot"></div><span class="feature-text">Easy tow setup with walkthrough</span></div>
         </div>
+        <div style="margin-top: 2rem;">
+          <a href="info.html" class="btn-primary">Full Details &amp; Pricing</a>
+        </div>
       </div>
       <div class="photo-frame">
-        <img src="preview.webp" alt="All Occasion Camping trailer" />
+        <img src="trailer.png" alt="All Occasion Camping trailer" />
       </div>
     </div>
   </section>
 
   <div class="cta-strip" id="contact">
     <h2 class="cta-headline">Ready to Book?</h2>
-    <p class="cta-sub">Reach out to check availability and reserve your dates.</p>
-    <a href="#" class="btn-primary btn-large" onclick="alert('Contact coming soon!'); return false;">Contact Us</a>
+    <p class="cta-sub">Check availability and reserve your dates in a couple of minutes.</p>
+    <a href="booking.html" class="btn-primary btn-large">Start Booking</a>
   </div>
 
   <footer>
     <div class="footer-logo">All Occasion <span>Camping</span></div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="info.html">Information</a>
+      <a href="booking.html">Booking</a>
+      <a href="login.html">Log in</a>
+    </div>
     <p class="footer-copy">&copy; 2026 All Occasion Camping.</p>
   </footer>
 

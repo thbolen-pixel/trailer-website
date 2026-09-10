@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trailer Information — All Occasion Camping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --forest: #1E3A12;
+      --forest-dark: #142808;
+      --forest-mid: #2A4E18;
+      --amber: #C8893A;
+      --amber-light: #DBA55A;
+      --cream: #F5F2EC;
+      --slate: #4A5568;
+      --slate-light: #718096;
+      --white: #FFFFFF;
+      --border: rgba(255,255,255,0.12);
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--forest); line-height: 1.6; }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(20, 40, 8, 0.97); backdrop-filter: blur(8px);
+      padding: 0 2rem; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--white); text-decoration: none; }
+    .nav-logo span { color: var(--amber); }
+    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    .nav-link { color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .nav-link:hover, .nav-link.active { color: var(--white); }
+    .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .btn-ghost {
+      background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--white);
+      padding: 0.45rem 1.1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s; text-decoration: none;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06); }
+    .btn-primary {
+      background: var(--amber); border: 1px solid var(--amber); color: var(--white);
+      padding: 0.45rem 1.25rem; border-radius: 6px; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--amber-light); }
+    .btn-large { padding: 0.8rem 2rem; font-size: 1rem; border-radius: 8px; }
+
+    .page-banner {
+      background: var(--forest-dark);
+      padding: 8.5rem 2rem 3rem;
+      text-align: center;
+    }
+    .page-eyebrow {
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--amber); margin-bottom: 0.75rem;
+    }
+    .page-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; color: var(--white); }
+
+    .content { max-width: 900px; margin: 0 auto; padding: 4rem 2rem; }
+    .section-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin-bottom: 1rem; }
+    .content h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: var(--forest); margin-bottom: 1.25rem; }
+    .content > section { margin-bottom: 3.5rem; }
+
+    .spec-table { width: 100%; border-collapse: collapse; }
+    .spec-table tr { border-bottom: 1px solid rgba(30,58,18,0.1); }
+    .spec-table tr:last-child { border-bottom: none; }
+    .spec-table td { padding: 0.85rem 0; font-size: 0.95rem; }
+    .spec-table td:first-child { color: var(--slate-light); width: 40%; }
+    .spec-table td:last-child { color: var(--forest); font-weight: 500; }
+
+    .pricing-card {
+      background: var(--white); border: 1px solid rgba(30,58,18,0.12); border-radius: 12px;
+      padding: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+    .pricing-amount { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: var(--forest); }
+    .pricing-amount span { font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 400; color: var(--slate-light); }
+    .pricing-note { font-size: 0.85rem; color: var(--slate-light); max-width: 320px; }
+
+    details {
+      border-bottom: 1px solid rgba(30,58,18,0.1);
+      padding: 1.1rem 0;
+    }
+    details:first-of-type { border-top: 1px solid rgba(30,58,18,0.1); }
+    summary {
+      cursor: pointer; font-weight: 600; font-size: 0.98rem; color: var(--forest);
+      list-style: none; display: flex; justify-content: space-between; align-items: center;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: '+'; color: var(--amber); font-size: 1.3rem; font-weight: 400; }
+    details[open] summary::after { content: '\2212'; }
+    details p { color: var(--slate); font-size: 0.92rem; margin-top: 0.75rem; line-height: 1.7; }
+
+    footer { background: var(--forest-dark); padding: 2.5rem 2rem; text-align: center; }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
+    .footer-logo span { color: var(--amber); }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin: 1rem 0; }
+    .footer-links a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.85rem; }
+    .footer-links a:hover { color: var(--white); }
+    .footer-copy { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+    @media (max-width: 700px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="nav-logo">All Occasion <span>Camping</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="info.html" class="nav-link active">Information</a>
+      <a href="booking.html" class="nav-link">Booking</a>
+    </div>
+    <div class="nav-actions">
+      <a href="login.html" class="btn-ghost">Log in</a>
+      <a href="login.html" class="btn-primary">Sign up</a>
+    </div>
+  </nav>
+
+  <div class="page-banner">
+    <p class="page-eyebrow">The Details</p>
+    <h1 class="page-title">Trailer Information</h1>
+  </div>
+
+  <main class="content">
+    <section>
+      <p class="section-label">Specifications</p>
+      <h2>What You're Towing</h2>
+      <table class="spec-table">
+        <tr><td>Sleeps</td><td>Up to 4 people</td></tr>
+        <tr><td>Length</td><td>21 ft</td></tr>
+        <tr><td>Dry weight</td><td>3,600 lbs</td></tr>
+        <tr><td>Hitch required</td><td>Standard bumper-pull, 2" ball</td></tr>
+        <tr><td>Kitchen</td><td>2-burner stove, mini fridge, sink</td></tr>
+        <tr><td>Climate</td><td>Propane furnace &amp; roof A/C</td></tr>
+        <tr><td>Power</td><td>Shore power hookup + onboard battery</td></tr>
+        <tr><td>Water</td><td>Fresh, grey, and black tanks onboard</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <p class="section-label">Pricing</p>
+      <h2>Rental Rates</h2>
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-amount">$95 <span>/ night</span></div>
+        </div>
+        <p class="pricing-note">3-night minimum. Weekly rate available at booking. Refundable damage deposit required at pickup.</p>
+      </div>
+    </section>
+
+    <section>
+      <p class="section-label">Good to Know</p>
+      <h2>Frequently Asked Questions</h2>
+      <details open>
+        <summary>What do I need to tow it?</summary>
+        <p>A vehicle rated for at least 3,600 lbs towing capacity and a standard 2" ball hitch. We'll walk you through hookup and brake controller setup at pickup.</p>
+      </details>
+      <details>
+        <summary>Is a security deposit required?</summary>
+        <p>Yes — a refundable damage deposit is collected at pickup and returned within 3 business days after the trailer is checked back in.</p>
+      </details>
+      <details>
+        <summary>Can I bring pets?</summary>
+        <p>Well-behaved pets are welcome. Please mention this when booking so we can prepare the trailer accordingly.</p>
+      </details>
+      <details>
+        <summary>What's your cancellation policy?</summary>
+        <p>Full refund for cancellations made at least 7 days before pickup. Cancellations inside 7 days are refunded 50%.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-logo">All Occasion <span>Camping</span></div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="info.html">Information</a>
+      <a href="booking.html">Booking</a>
+      <a href="login.html">Log in</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 All Occasion Camping.</p>
+  </footer>
+</body>
+</html>
