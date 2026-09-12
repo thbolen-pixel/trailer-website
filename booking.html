@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -15,7 +16,6 @@
       --slate: #4A5568; --slate-light: #718096; --white: #FFFFFF;
       --border: rgba(255,255,255,0.12);
     }
-    html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--forest); line-height: 1.6; }
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -27,20 +27,11 @@
     .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--white); text-decoration: none; }
     .nav-logo span { color: var(--amber); }
     .nav-links { display: flex; align-items: center; gap: 1.75rem; }
-    .nav-link { color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .nav-link { color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
     .nav-link:hover, .nav-link.active { color: var(--white); }
     .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
-    .btn-ghost {
-      background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--white);
-      padding: 0.45rem 1.1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500;
-      cursor: pointer; transition: border-color 0.2s, background 0.2s; text-decoration: none;
-    }
-    .btn-ghost:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06); }
-    .btn-primary {
-      background: var(--amber); border: 1px solid var(--amber); color: var(--white);
-      padding: 0.45rem 1.25rem; border-radius: 6px; font-size: 0.875rem; font-weight: 600;
-      cursor: pointer; transition: background 0.2s; text-decoration: none;
-    }
+    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--white); padding: 0.45rem 1.1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+    .btn-primary { background: var(--amber); border: 1px solid var(--amber); color: var(--white); padding: 0.45rem 1.25rem; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; text-decoration: none; }
     .btn-primary:hover { background: var(--amber-light); }
 
     .page-banner { background: var(--forest-dark); padding: 8.5rem 2rem 3rem; text-align: center; }
@@ -48,39 +39,55 @@
     .page-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; color: var(--white); }
     .page-sub { color: rgba(255,255,255,0.65); max-width: 480px; margin: 0.75rem auto 0; font-size: 0.95rem; }
 
-    .form-wrap { max-width: 560px; margin: 0 auto; padding: 4rem 2rem 6rem; }
-    .form-card { background: var(--white); border: 1px solid rgba(30,58,18,0.12); border-radius: 14px; padding: 2.5rem; }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .field { margin-bottom: 1.35rem; }
-    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--forest); margin-bottom: 0.4rem; }
-    .field input, .field textarea {
-      width: 100%; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 7px;
-      font-family: 'Inter', sans-serif; font-size: 0.92rem; color: var(--forest); background: var(--cream);
-      transition: border-color 0.2s;
-    }
-    .field input:focus, .field textarea:focus { outline: none; border-color: var(--amber); }
-    .field textarea { resize: vertical; min-height: 90px; }
-    .submit-btn { width: 100%; padding: 0.85rem; font-size: 0.98rem; border-radius: 8px; margin-top: 0.5rem; }
-    .form-note { font-size: 0.78rem; color: var(--slate-light); text-align: center; margin-top: 1.1rem; }
+    .booking-wrap { max-width: 980px; margin: 0 auto; padding: 4rem 2rem 6rem; display: grid; grid-template-columns: 1.1fr 1fr; gap: 3rem; align-items: start; }
 
-    .confirm-panel { display: none; text-align: center; padding: 2rem 0; }
-    .confirm-panel.visible { display: block; }
-    .confirm-icon { font-size: 2.4rem; color: var(--amber); margin-bottom: 1rem; }
-    .confirm-panel h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 0.6rem; color: var(--forest); }
-    .confirm-panel p { color: var(--slate); font-size: 0.92rem; max-width: 380px; margin: 0 auto; }
+    .cal-card { background: var(--white); border: 1px solid rgba(30,58,18,0.12); border-radius: 14px; padding: 1.75rem; }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .cal-header button { background: none; border: 1px solid rgba(30,58,18,0.15); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; color: var(--forest); font-size: 1rem; }
+    .cal-month { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.1rem; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-dow { text-align: center; font-size: 0.7rem; color: var(--slate-light); font-weight: 600; padding-bottom: 4px; }
+    .cal-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 7px; font-size: 0.85rem; cursor: pointer; color: var(--forest);
+      background: transparent; border: 1px solid transparent;
+    }
+    .cal-day.empty { cursor: default; }
+    .cal-day.past { color: rgba(74,85,104,0.3); cursor: not-allowed; }
+    .cal-day.unavailable { background: rgba(200,60,40,0.08); color: rgba(138,48,32,0.5); text-decoration: line-through; cursor: not-allowed; }
+    .cal-day.available:hover { border-color: var(--amber); }
+    .cal-day.selected-start, .cal-day.selected-end { background: var(--amber); color: var(--white); font-weight: 600; }
+    .cal-day.in-range { background: rgba(200,137,58,0.18); }
+    .cal-legend { display: flex; gap: 1.25rem; margin-top: 1.25rem; font-size: 0.78rem; color: var(--slate-light); flex-wrap: wrap; }
+    .cal-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+    .selection-summary { margin-top: 1.25rem; padding-top: 1.1rem; border-top: 1px solid rgba(30,58,18,0.1); font-size: 0.9rem; color: var(--forest); }
+
+    .form-card { background: var(--white); border: 1px solid rgba(30,58,18,0.12); border-radius: 14px; padding: 2rem; }
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--forest); margin-bottom: 0.4rem; }
+    .field input, .field textarea { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.92rem; color: var(--forest); background: var(--cream); }
+    .field input:focus, .field textarea:focus { outline: none; border-color: var(--amber); }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .submit-btn { width: 100%; padding: 0.85rem; font-size: 0.98rem; border-radius: 8px; margin-top: 0.5rem; border: none; }
+    .submit-btn:disabled { opacity: 0.55; cursor: default; }
+    .form-note { font-size: 0.78rem; color: var(--slate-light); text-align: center; margin-top: 1.1rem; }
+    .form-status { display: none; font-size: 0.85rem; padding: 0.65rem 0.8rem; border-radius: 7px; margin-bottom: 1.1rem; }
+    .form-status.visible { display: block; }
+    .form-status.error { background: rgba(200,60,40,0.08); border: 1px solid rgba(200,60,40,0.25); color: #8a3020; }
+    .form-status.success { background: rgba(42,78,24,0.08); border: 1px solid rgba(42,78,24,0.25); color: var(--forest); }
 
     footer { background: var(--forest-dark); padding: 2.5rem 2rem; text-align: center; }
     .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
     .footer-logo span { color: var(--amber); }
     .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin: 1rem 0; }
     .footer-links a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.85rem; }
-    .footer-links a:hover { color: var(--white); }
     .footer-copy { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
-    @media (max-width: 700px) {
+    @media (max-width: 800px) {
+      .booking-wrap { grid-template-columns: 1fr; }
       nav { padding: 0 1rem; }
       .nav-links { display: none; }
-      .field-row { grid-template-columns: 1fr; gap: 0; }
-      .form-card { padding: 1.75rem; }
     }
   </style>
 </head>
@@ -101,53 +108,35 @@
   <div class="page-banner">
     <p class="page-eyebrow">Reserve Your Dates</p>
     <h1 class="page-title">Book the Trailer</h1>
-    <p class="page-sub">Tell us when you'd like to go, and we'll confirm availability.</p>
+    <p class="page-sub">Pick your pickup and return dates on the calendar — greyed-out days are already taken.</p>
   </div>
 
-  <div class="form-wrap">
-    <div class="form-card">
-      <form id="bookingForm">
-        <div class="field-row">
-          <div class="field">
-            <label for="firstName">First name</label>
-            <input type="text" id="firstName" required />
-          </div>
-          <div class="field">
-            <label for="lastName">Last name</label>
-            <input type="text" id="lastName" required />
-          </div>
-        </div>
-        <div class="field">
-          <label for="email">Email</label>
-          <input type="email" id="email" required />
-        </div>
-        <div class="field">
-          <label for="phone">Phone</label>
-          <input type="tel" id="phone" required />
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="pickupDate">Pickup date</label>
-            <input type="date" id="pickupDate" required />
-          </div>
-          <div class="field">
-            <label for="returnDate">Return date</label>
-            <input type="date" id="returnDate" required />
-          </div>
-        </div>
-        <div class="field">
-          <label for="notes">Anything we should know?</label>
-          <textarea id="notes" placeholder="Trip plans, towing vehicle, pets, questions..."></textarea>
-        </div>
-        <button type="submit" class="btn-primary submit-btn">Request Booking</button>
-        <p class="form-note">This sends a request — we'll confirm availability and follow up by email.</p>
-      </form>
-
-      <div class="confirm-panel" id="confirmPanel">
-        <div class="confirm-icon">&#10003;</div>
-        <h3>Request received</h3>
-        <p>Thanks! We'll get back to you by email within a day to confirm your dates.</p>
+  <div class="booking-wrap">
+    <div class="cal-card">
+      <div class="cal-header">
+        <button id="prevMonth" type="button">&#8249;</button>
+        <div class="cal-month" id="calMonthLabel"></div>
+        <button id="nextMonth" type="button">&#8250;</button>
       </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><span class="swatch" style="background: var(--amber);"></span> Selected</span>
+        <span><span class="swatch" style="background: rgba(200,137,58,0.35);"></span> In range</span>
+        <span><span class="swatch" style="background: rgba(200,60,40,0.15);"></span> Unavailable</span>
+      </div>
+      <div class="selection-summary" id="selectionSummary">Click a date to start your selection.</div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-status" id="formStatus"></div>
+      <form id="bookingForm">
+        <div class="field"><label for="guestName">Full name</label><input type="text" id="guestName" required /></div>
+        <div class="field"><label for="guestEmail">Email</label><input type="email" id="guestEmail" required /></div>
+        <div class="field"><label for="guestPhone">Phone</label><input type="tel" id="guestPhone" required /></div>
+        <div class="field"><label for="notes">Anything we should know?</label><textarea id="notes" placeholder="Trip plans, towing vehicle, pets, questions..."></textarea></div>
+        <button type="submit" class="btn-primary submit-btn" id="submitBtn" disabled>Select dates first</button>
+        <p class="form-note">We'll email to confirm — this doesn't guarantee your dates until confirmed.</p>
+      </form>
     </div>
   </div>
 
@@ -162,17 +151,184 @@
     <p class="footer-copy">&copy; 2026 All Occasion Camping.</p>
   </footer>
 
+  <script src="supabase-config.js"></script>
   <script>
-    // NOTE: This form is front-end only right now. It doesn't send an email
-    // or save anywhere yet — wire this up to a backend (e.g. a form service
-    // like Formspree, or your own API endpoint) to actually receive requests.
-    const form = document.getElementById('bookingForm');
-    const confirmPanel = document.getElementById('confirmPanel');
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      form.style.display = 'none';
-      confirmPanel.classList.add('visible');
+    const MS_DAY = 86400000;
+    function toDateStr(d) { return d.toISOString().slice(0, 10); }
+    function parseDateStr(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+
+    let unavailable = new Set();   // set of "YYYY-MM-DD" strings that are taken
+    let viewYear, viewMonth;       // calendar currently showing
+    let selStart = null, selEnd = null;
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    async function loadUnavailableDates() {
+      const { data, error } = await supabaseClient.from('bookings').select('start_date, end_date');
+      if (error) { console.error(error); return; }
+      unavailable = new Set();
+      for (const row of data) {
+        let d = parseDateStr(row.start_date);
+        const end = parseDateStr(row.end_date);
+        while (d <= end) {
+          unavailable.add(toDateStr(d));
+          d = new Date(d.getTime() + MS_DAY);
+        }
+      }
+    }
+
+    function renderCalendar() {
+      const label = document.getElementById('calMonthLabel');
+      const grid = document.getElementById('calGrid');
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      label.textContent = monthNames[viewMonth] + " " + viewYear;
+      grid.innerHTML = '';
+
+      ["S","M","T","W","T","F","S"].forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'cal-dow'; el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      const firstDay = new Date(viewYear, viewMonth, 1);
+      const startOffset = firstDay.getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      for (let i = 0; i < startOffset; i++) {
+        const el = document.createElement('div');
+        el.className = 'cal-day empty';
+        grid.appendChild(el);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(viewYear, viewMonth, day);
+        const dateStr = toDateStr(dateObj);
+        const el = document.createElement('div');
+        el.className = 'cal-day';
+        el.textContent = day;
+
+        const isPast = dateObj < today;
+        const isUnavailable = unavailable.has(dateStr);
+
+        if (isPast) {
+          el.classList.add('past');
+        } else if (isUnavailable) {
+          el.classList.add('unavailable');
+        } else {
+          el.classList.add('available');
+          el.addEventListener('click', () => handleDayClick(dateObj));
+        }
+
+        if (selStart && dateStr === toDateStr(selStart)) el.classList.add('selected-start');
+        if (selEnd && dateStr === toDateStr(selEnd)) el.classList.add('selected-end');
+        if (selStart && selEnd && dateObj > selStart && dateObj < selEnd) el.classList.add('in-range');
+
+        grid.appendChild(el);
+      }
+    }
+
+    function rangeHasUnavailable(start, end) {
+      let d = new Date(start.getTime() + MS_DAY);
+      while (d < end) {
+        if (unavailable.has(toDateStr(d))) return true;
+        d = new Date(d.getTime() + MS_DAY);
+      }
+      return false;
+    }
+
+    function handleDayClick(dateObj) {
+      if (!selStart || (selStart && selEnd)) {
+        selStart = dateObj; selEnd = null;
+      } else {
+        if (dateObj < selStart) {
+          selStart = dateObj; selEnd = null;
+        } else if (rangeHasUnavailable(selStart, dateObj)) {
+          alert("That range includes a date that's already taken. Pick a different range.");
+          selStart = dateObj; selEnd = null;
+        } else {
+          selEnd = dateObj;
+        }
+      }
+      renderCalendar();
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const summary = document.getElementById('selectionSummary');
+      const submitBtn = document.getElementById('submitBtn');
+      if (selStart && selEnd) {
+        const nights = Math.round((selEnd - selStart) / MS_DAY);
+        summary.textContent = `${selStart.toDateString()} \u2192 ${selEnd.toDateString()} (${nights} night${nights === 1 ? '' : 's'})`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Request Booking';
+      } else if (selStart) {
+        summary.textContent = `Pickup: ${selStart.toDateString()} — now click your return date.`;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Select your return date';
+      } else {
+        summary.textContent = 'Click a date to start your selection.';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Select dates first';
+      }
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      renderCalendar();
     });
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      renderCalendar();
+    });
+
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('formStatus');
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      statusEl.className = 'form-status';
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      const payload = {
+        start_date: toDateStr(selStart),
+        end_date: toDateStr(selEnd),
+        guest_name: document.getElementById('guestName').value,
+        guest_email: document.getElementById('guestEmail').value,
+        guest_phone: document.getElementById('guestPhone').value,
+        notes: document.getElementById('notes').value,
+        user_id: session ? session.user.id : null
+      };
+
+      try {
+        const res = await fetch('/api/book', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Something went wrong.');
+
+        statusEl.textContent = "Request received! We'll email you to confirm.";
+        statusEl.className = 'form-status visible success';
+        document.getElementById('bookingForm').reset();
+        selStart = null; selEnd = null;
+        await loadUnavailableDates();
+        renderCalendar();
+        updateSummary();
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = 'form-status visible error';
+        submitBtn.disabled = false;
+      }
+    });
+
+    (async () => {
+      const now = new Date();
+      viewYear = now.getFullYear(); viewMonth = now.getMonth();
+      await loadUnavailableDates();
+      renderCalendar();
+      updateSummary();
+    })();
   </script>
 </body>
 </html>

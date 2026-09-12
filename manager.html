@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Dashboard — All Occasion Camping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --forest: #1E3A12; --forest-dark: #142808; --amber: #C8893A; --amber-light: #DBA55A;
+      --cream: #F5F2EC; --slate: #4A5568; --slate-light: #718096; --white: #FFFFFF;
+      --border: rgba(255,255,255,0.12);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--forest); line-height: 1.6; }
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(20,40,8,0.97); backdrop-filter: blur(8px); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--white); text-decoration: none; }
+    .nav-logo span { color: var(--amber); }
+    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--white); padding: 0.45rem 1.1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+    .btn-primary { background: var(--amber); border: 1px solid var(--amber); color: var(--white); padding: 0.45rem 1.25rem; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: var(--amber-light); }
+    .page-banner { background: var(--forest-dark); padding: 8.5rem 2rem 3rem; text-align: center; }
+    .page-eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.75rem; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; color: var(--white); }
+    .content { max-width: 800px; margin: 0 auto; padding: 4rem 2rem; }
+    .gate-message { text-align: center; padding: 4rem 2rem; color: var(--slate); }
+    .card { background: var(--white); border: 1px solid rgba(30,58,18,0.12); border-radius: 14px; padding: 2rem; margin-bottom: 2rem; }
+    .card h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 1.25rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .field input { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.9rem; background: var(--cream); color: var(--forest); }
+    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(30,58,18,0.08); font-size: 0.9rem; }
+    .list-row:last-child { border-bottom: none; }
+    .tag { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .tag.blocked { background: rgba(74,85,104,0.12); color: var(--slate); }
+    .tag.booking { background: rgba(200,137,58,0.15); color: var(--amber); }
+    .del-btn { background: none; border: none; color: #8a3020; font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
+    .form-status { display: none; font-size: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 7px; margin-bottom: 1rem; }
+    .form-status.visible { display: block; }
+    .form-status.error { background: rgba(200,60,40,0.08); color: #8a3020; }
+    .form-status.success { background: rgba(42,78,24,0.08); color: var(--forest); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="nav-logo">All Occasion <span>Camping</span></a>
+    <a href="login.html" class="btn-ghost">Account</a>
+  </nav>
+
+  <div class="page-banner">
+    <p class="page-eyebrow">Manager Only</p>
+    <h1 class="page-title">Manage Availability</h1>
+  </div>
+
+  <div id="gateMessage" class="gate-message" style="display:none;">
+    <p>You need to be logged in as a manager to see this page.</p>
+    <br />
+    <a href="login.html" class="btn-primary" style="text-decoration:none;">Go to Log In</a>
+  </div>
+
+  <div class="content" id="managerContent" style="display:none;">
+    <div class="card">
+      <h2>Block Off Dates</h2>
+      <div class="form-status" id="blockStatus"></div>
+      <form id="blockForm">
+        <div class="field-row">
+          <div class="field"><label for="blockStart">Start date</label><input type="date" id="blockStart" required /></div>
+          <div class="field"><label for="blockEnd">End date</label><input type="date" id="blockEnd" required /></div>
+        </div>
+        <div class="field"><label for="blockNote">Reason (just for you)</label><input type="text" id="blockNote" placeholder="Maintenance, personal use, etc." /></div>
+        <button type="submit" class="btn-primary">Block These Dates</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Upcoming Bookings &amp; Blocks</h2>
+      <div id="upcomingList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Guest Messages</h2>
+      <div id="threadListWrap"></div>
+      <div id="threadDetailWrap" style="display:none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(30,58,18,0.1);">
+        <button id="backToThreads" style="background:none; border:none; color: var(--amber); font-size: 0.85rem; cursor: pointer; margin-bottom: 1rem; text-decoration: underline;">&larr; Back to all messages</button>
+        <div id="threadMessages" style="display:flex; flex-direction:column; gap: 0.75rem; max-height: 340px; overflow-y: auto; margin-bottom: 1rem;"></div>
+        <div style="display:flex; gap: 0.6rem;">
+          <textarea id="replyBody" placeholder="Type your reply..." style="flex:1; padding: 0.65rem 0.8rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.9rem; resize: vertical; min-height: 44px; background: var(--cream); color: var(--forest);"></textarea>
+          <button class="btn-primary" id="sendReplyBtn">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) { document.getElementById('gateMessage').style.display = 'block'; return; }
+
+      const { data: profile } = await supabaseClient
+        .from('profiles').select('role').eq('id', session.user.id).single();
+
+      if (!profile || profile.role !== 'manager') {
+        document.getElementById('gateMessage').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('managerContent').style.display = 'block';
+      await loadUpcoming();
+      await loadThreads();
+    }
+
+    let activeThreadUserId = null;
+
+    async function loadThreads() {
+      const { data, error } = await supabaseClient
+        .from('messages')
+        .select('user_id, guest_name, guest_email, body, sender_role, created_at')
+        .order('created_at', { ascending: false });
+
+      const wrap = document.getElementById('threadListWrap');
+      if (error) { wrap.innerHTML = '<p style="color: var(--slate-light); font-size: 0.9rem;">Could not load messages.</p>'; return; }
+      if (!data.length) { wrap.innerHTML = '<p style="color: var(--slate-light); font-size: 0.9rem;">No messages yet.</p>'; return; }
+
+      const threads = {};
+      data.forEach(m => {
+        if (!threads[m.user_id]) threads[m.user_id] = m; // first hit is most recent, since sorted desc
+      });
+
+      wrap.innerHTML = '';
+      Object.values(threads).forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'list-row';
+        row.style.cursor = 'pointer';
+        const preview = t.body.length > 60 ? t.body.slice(0, 60) + '…' : t.body;
+        row.innerHTML = `<span><strong>${t.guest_name || t.guest_email}</strong> — ${preview}</span>`;
+        row.addEventListener('click', () => openThread(t.user_id, t.guest_name, t.guest_email));
+        wrap.appendChild(row);
+      });
+    }
+
+    async function openThread(userId, name, email) {
+      activeThreadUserId = userId;
+      document.getElementById('threadListWrap').style.display = 'none';
+      document.getElementById('threadDetailWrap').style.display = 'block';
+      await renderThreadMessages();
+    }
+
+    async function renderThreadMessages() {
+      const { data, error } = await supabaseClient
+        .from('messages')
+        .select('sender_role, body, created_at')
+        .eq('user_id', activeThreadUserId)
+        .order('created_at');
+
+      const box = document.getElementById('threadMessages');
+      if (error) { box.textContent = 'Could not load thread.'; return; }
+      box.innerHTML = '';
+      data.forEach(m => {
+        const div = document.createElement('div');
+        const isManager = m.sender_role === 'manager';
+        div.style.cssText = `max-width:80%; padding:0.6rem 0.85rem; border-radius:10px; font-size:0.88rem; align-self:${isManager ? 'flex-end' : 'flex-start'}; background:${isManager ? 'var(--amber)' : 'var(--cream)'}; color:${isManager ? 'var(--white)' : 'var(--forest)'};`;
+        const time = new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        div.innerHTML = `${m.body}<div style="font-size:0.68rem; opacity:0.7; margin-top:0.25rem;">${time}</div>`;
+        box.appendChild(div);
+      });
+      box.style.display = 'flex';
+      box.style.flexDirection = 'column';
+      box.scrollTop = box.scrollHeight;
+    }
+
+    document.getElementById('backToThreads').addEventListener('click', async () => {
+      document.getElementById('threadDetailWrap').style.display = 'none';
+      document.getElementById('threadListWrap').style.display = 'block';
+      activeThreadUserId = null;
+      await loadThreads();
+    });
+
+    document.getElementById('sendReplyBtn').addEventListener('click', async () => {
+      const textarea = document.getElementById('replyBody');
+      const body = textarea.value.trim();
+      if (!body || !activeThreadUserId) return;
+
+      const btn = document.getElementById('sendReplyBtn');
+      btn.disabled = true;
+      const { error } = await supabaseClient.from('messages').insert({
+        user_id: activeThreadUserId,
+        sender_role: 'manager',
+        body
+      });
+      btn.disabled = false;
+      if (!error) {
+        textarea.value = '';
+        await renderThreadMessages();
+      } else {
+        alert('Could not send: ' + error.message);
+      }
+    });
+
+    async function loadUpcoming() {
+      const { data, error } = await supabaseClient
+        .from('bookings')
+        .select('id, start_date, end_date, guest_name, notes, is_blocked')
+        .gte('end_date', new Date().toISOString().slice(0, 10))
+        .order('start_date');
+
+      const list = document.getElementById('upcomingList');
+      if (error) { list.textContent = 'Could not load bookings.'; return; }
+      if (!data.length) { list.innerHTML = '<p style="color: var(--slate-light); font-size: 0.9rem;">Nothing upcoming.</p>'; return; }
+
+      list.innerHTML = '';
+      data.forEach(row => {
+        const div = document.createElement('div');
+        div.className = 'list-row';
+        const label = row.is_blocked
+          ? (row.notes || 'Blocked')
+          : (row.guest_name || 'Guest booking');
+        const tag = row.is_blocked
+          ? '<span class="tag blocked">Blocked</span>'
+          : '<span class="tag booking">Booking</span>';
+        div.innerHTML = `
+          <span>${tag} ${row.start_date} \u2192 ${row.end_date} — ${label}</span>
+          ${row.is_blocked ? `<button class="del-btn" data-id="${row.id}">Remove</button>` : ''}
+        `;
+        list.appendChild(div);
+      });
+
+      list.querySelectorAll('.del-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await supabaseClient.from('bookings').delete().eq('id', btn.dataset.id);
+          await loadUpcoming();
+        });
+      });
+    }
+
+    document.getElementById('blockForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('blockStatus');
+      const start = document.getElementById('blockStart').value;
+      const end = document.getElementById('blockEnd').value;
+      const note = document.getElementById('blockNote').value;
+
+      const { error } = await supabaseClient.from('bookings').insert({
+        start_date: start, end_date: end, notes: note, is_blocked: true
+      });
+
+      if (error) {
+        statusEl.textContent = error.message;
+        statusEl.className = 'form-status visible error';
+      } else {
+        statusEl.textContent = 'Dates blocked.';
+        statusEl.className = 'form-status visible success';
+        document.getElementById('blockForm').reset();
+        await loadUpcoming();
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

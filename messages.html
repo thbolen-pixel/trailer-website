@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages — All Occasion Camping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --forest: #1E3A12; --forest-dark: #142808; --amber: #C8893A; --amber-light: #DBA55A;
+      --cream: #F5F2EC; --slate: #4A5568; --slate-light: #718096; --white: #FFFFFF;
+      --border: rgba(255,255,255,0.12);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--forest); line-height: 1.6; }
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(20,40,8,0.97); backdrop-filter: blur(8px); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--white); text-decoration: none; }
+    .nav-logo span { color: var(--amber); }
+    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--white); padding: 0.45rem 1.1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+    .btn-primary { background: var(--amber); border: 1px solid var(--amber); color: var(--white); padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary:hover { background: var(--amber-light); }
+    .btn-primary:disabled { opacity: 0.55; cursor: default; }
+
+    .page-banner { background: var(--forest-dark); padding: 8.5rem 2rem 3rem; text-align: center; }
+    .page-eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.75rem; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; color: var(--white); }
+
+    .content { max-width: 640px; margin: 0 auto; padding: 4rem 2rem 6rem; }
+    .gate-message { text-align: center; padding: 4rem 2rem; color: var(--slate); }
+
+    .thread-card { background: var(--white); border: 1px solid rgba(30,58,18,0.12); border-radius: 14px; padding: 1.75rem; }
+    .thread-list { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 1.5rem; max-height: 420px; overflow-y: auto; }
+    .msg { max-width: 80%; padding: 0.7rem 0.95rem; border-radius: 10px; font-size: 0.9rem; }
+    .msg.guest { align-self: flex-end; background: var(--amber); color: var(--white); border-bottom-right-radius: 3px; }
+    .msg.manager { align-self: flex-start; background: var(--cream); color: var(--forest); border-bottom-left-radius: 3px; }
+    .msg-time { display: block; font-size: 0.68rem; opacity: 0.7; margin-top: 0.3rem; }
+    .empty-note { color: var(--slate-light); font-size: 0.9rem; text-align: center; padding: 1.5rem 0; }
+
+    .send-row { display: flex; gap: 0.6rem; }
+    .send-row textarea { flex: 1; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.9rem; resize: vertical; min-height: 44px; background: var(--cream); color: var(--forest); }
+    .send-row textarea:focus { outline: none; border-color: var(--amber); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="nav-logo">All Occasion <span>Camping</span></a>
+    <a href="login.html" class="btn-ghost">Account</a>
+  </nav>
+
+  <div class="page-banner">
+    <p class="page-eyebrow">Questions?</p>
+    <h1 class="page-title">Message Us</h1>
+  </div>
+
+  <div id="gateMessage" class="gate-message" style="display:none;">
+    <p>You need to be logged in to send a message.</p>
+    <br />
+    <a href="login.html" class="btn-primary" style="text-decoration:none; display:inline-block;">Go to Log In</a>
+  </div>
+
+  <div class="content" id="msgContent" style="display:none;">
+    <div class="thread-card">
+      <div class="thread-list" id="threadList"></div>
+      <div class="send-row">
+        <textarea id="msgBody" placeholder="Type your message..."></textarea>
+        <button class="btn-primary" id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    let currentUserId = null;
+    let currentName = '';
+    let currentEmail = '';
+
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) { document.getElementById('gateMessage').style.display = 'block'; return; }
+
+      currentUserId = session.user.id;
+      currentEmail = session.user.email;
+
+      const { data: profile } = await supabaseClient
+        .from('profiles').select('full_name').eq('id', currentUserId).single();
+      currentName = (profile && profile.full_name) || currentEmail;
+
+      document.getElementById('msgContent').style.display = 'block';
+      await loadThread();
+    }
+
+    async function loadThread() {
+      const { data, error } = await supabaseClient
+        .from('messages')
+        .select('sender_role, body, created_at')
+        .eq('user_id', currentUserId)
+        .order('created_at');
+
+      const list = document.getElementById('threadList');
+      if (error) { list.innerHTML = '<p class="empty-note">Could not load messages.</p>'; return; }
+      if (!data.length) { list.innerHTML = '<p class="empty-note">No messages yet — send one below and we\'ll get back to you.</p>'; return; }
+
+      list.innerHTML = '';
+      data.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'msg ' + m.sender_role;
+        const time = new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        div.innerHTML = `${escapeHtml(m.body)}<span class="msg-time">${time}</span>`;
+        list.appendChild(div);
+      });
+      list.scrollTop = list.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const textarea = document.getElementById('msgBody');
+      const body = textarea.value.trim();
+      if (!body) return;
+
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+
+      const { error } = await supabaseClient.from('messages').insert({
+        user_id: currentUserId,
+        guest_name: currentName,
+        guest_email: currentEmail,
+        sender_role: 'guest',
+        body
+      });
+
+      btn.disabled = false;
+      if (!error) {
+        textarea.value = '';
+        await loadThread();
+      } else {
+        alert('Could not send: ' + error.message);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

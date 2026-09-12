@@ -7,155 +7,172 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --forest: #1E3A12; --forest-dark: #142808; --forest-mid: #2A4E18;
       --amber: #C8893A; --amber-light: #DBA55A; --cream: #F5F2EC;
       --slate: #4A5568; --slate-light: #718096; --white: #FFFFFF;
-      --border: rgba(255,255,255,0.12);
     }
-    body {
-      font-family: 'Inter', sans-serif; background: var(--forest-dark); color: var(--forest);
-      min-height: 100vh; display: flex; flex-direction: column;
-    }
-    .top-link {
-      padding: 1.5rem 2rem; display: flex; justify-content: center;
-    }
-    .top-link a {
-      font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700;
-      color: var(--white); text-decoration: none;
-    }
+    body { font-family: 'Inter', sans-serif; background: var(--forest-dark); color: var(--forest); min-height: 100vh; display: flex; flex-direction: column; }
+    .top-link { padding: 1.5rem 2rem; display: flex; justify-content: center; }
+    .top-link a { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--white); text-decoration: none; }
     .top-link a span { color: var(--amber); }
-
     .auth-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1.5rem 1.5rem 3rem; }
-    .auth-card {
-      background: var(--cream); border-radius: 14px; padding: 2.75rem;
-      width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    }
+    .auth-card { background: var(--cream); border-radius: 14px; padding: 2.75rem; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
     .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; background: rgba(30,58,18,0.07); border-radius: 8px; padding: 4px; }
-    .auth-tab {
-      flex: 1; text-align: center; padding: 0.55rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600;
-      color: var(--slate-light); cursor: pointer; transition: background 0.2s, color 0.2s; border: none; background: transparent;
-      font-family: 'Inter', sans-serif;
-    }
+    .auth-tab { flex: 1; text-align: center; padding: 0.55rem; border-radius: 6px; font-size: 0.88rem; font-weight: 600; color: var(--slate-light); cursor: pointer; transition: background 0.2s, color 0.2s; border: none; background: transparent; font-family: 'Inter', sans-serif; }
     .auth-tab.active { background: var(--white); color: var(--forest); }
-
     .auth-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--forest); margin-bottom: 0.4rem; }
     .auth-sub { font-size: 0.88rem; color: var(--slate-light); margin-bottom: 1.75rem; }
-
     .field { margin-bottom: 1.1rem; }
     .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--forest); margin-bottom: 0.4rem; }
-    .field input {
-      width: 100%; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 7px;
-      font-family: 'Inter', sans-serif; font-size: 0.92rem; color: var(--forest); background: var(--white);
-      transition: border-color 0.2s;
-    }
+    .field input { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.92rem; color: var(--forest); background: var(--white); }
     .field input:focus { outline: none; border-color: var(--amber); }
-
-    .btn-primary {
-      background: var(--amber); border: 1px solid var(--amber); color: var(--white);
-      padding: 0.75rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 0.4rem;
-      font-family: 'Inter', sans-serif;
-    }
+    .btn-primary { background: var(--amber); border: 1px solid var(--amber); color: var(--white); padding: 0.75rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 0.4rem; font-family: 'Inter', sans-serif; }
     .btn-primary:hover { background: var(--amber-light); }
-
-    .auth-error {
-      display: none; background: rgba(200,60,40,0.08); border: 1px solid rgba(200,60,40,0.25);
-      color: #8a3020; font-size: 0.82rem; padding: 0.65rem 0.8rem; border-radius: 7px; margin-bottom: 1.1rem;
-    }
-    .auth-error.visible { display: block; }
-
+    .btn-primary:disabled { opacity: 0.6; cursor: default; }
+    .auth-message { display: none; font-size: 0.82rem; padding: 0.65rem 0.8rem; border-radius: 7px; margin-bottom: 1.1rem; }
+    .auth-message.visible { display: block; }
+    .auth-message.error { background: rgba(200,60,40,0.08); border: 1px solid rgba(200,60,40,0.25); color: #8a3020; }
+    .auth-message.success { background: rgba(42,78,24,0.08); border: 1px solid rgba(42,78,24,0.25); color: var(--forest); }
     .auth-panel { display: none; }
     .auth-panel.active { display: block; }
+    .signed-in-panel { display: none; text-align: center; }
+    .signed-in-panel.active { display: block; }
+    .signed-in-panel p { color: var(--slate); font-size: 0.92rem; margin-bottom: 1.25rem; }
+    .btn-ghost-full { display: block; width: 100%; text-align: center; padding: 0.7rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 8px; color: var(--forest); text-decoration: none; font-size: 0.9rem; font-weight: 600; margin-top: 0.6rem; }
   </style>
 </head>
 <body>
-  <div class="top-link">
-    <a href="index.html">All Occasion <span>Camping</span></a>
-  </div>
+  <div class="top-link"><a href="index.html">All Occasion <span>Camping</span></a></div>
 
   <div class="auth-wrap">
     <div class="auth-card">
-      <div class="auth-tabs">
-        <button type="button" class="auth-tab active" id="tabLogin">Log in</button>
-        <button type="button" class="auth-tab" id="tabSignup">Sign up</button>
+
+      <!-- Shown once we know the visitor is already logged in -->
+      <div class="signed-in-panel" id="signedInPanel">
+        <h2 class="auth-title" id="signedInName">Welcome back</h2>
+        <p id="signedInEmail"></p>
+        <a href="booking.html" class="btn-primary" style="display:block; text-decoration:none; text-align:center;">Book the Trailer</a>
+        <a href="messages.html" class="btn-ghost-full">Messages</a>
+        <a href="manager.html" class="btn-ghost-full" id="managerLink" style="display:none;">Manager Dashboard</a>
+        <button class="btn-primary" id="logoutBtn" style="background: transparent; color: var(--forest); border-color: rgba(30,58,18,0.2); margin-top: 0.6rem;">Log out</button>
       </div>
 
-      <!-- Login panel -->
-      <div class="auth-panel active" id="panelLogin">
-        <h2 class="auth-title">Welcome back</h2>
-        <p class="auth-sub">Log in to manage your bookings.</p>
-        <div class="auth-error" id="loginError">This is a placeholder login — no accounts are wired up yet.</div>
-        <form id="loginForm">
-          <div class="field">
-            <label for="loginEmail">Email</label>
-            <input type="email" id="loginEmail" required />
-          </div>
-          <div class="field">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" required />
-          </div>
-          <button type="submit" class="btn-primary">Log in</button>
-        </form>
+      <!-- Shown if nobody is logged in -->
+      <div id="loggedOutPanels">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="tabLogin">Log in</button>
+          <button type="button" class="auth-tab" id="tabSignup">Sign up</button>
+        </div>
+
+        <div class="auth-panel active" id="panelLogin">
+          <h2 class="auth-title">Welcome back</h2>
+          <p class="auth-sub">Log in to manage your bookings.</p>
+          <div class="auth-message" id="loginMessage"></div>
+          <form id="loginForm">
+            <div class="field"><label for="loginEmail">Email</label><input type="email" id="loginEmail" required /></div>
+            <div class="field"><label for="loginPassword">Password</label><input type="password" id="loginPassword" required /></div>
+            <button type="submit" class="btn-primary" id="loginSubmit">Log in</button>
+          </form>
+        </div>
+
+        <div class="auth-panel" id="panelSignup">
+          <h2 class="auth-title">Create an account</h2>
+          <p class="auth-sub">Save your info for faster bookings next time.</p>
+          <div class="auth-message" id="signupMessage"></div>
+          <form id="signupForm">
+            <div class="field"><label for="signupName">Full name</label><input type="text" id="signupName" required /></div>
+            <div class="field"><label for="signupEmail">Email</label><input type="email" id="signupEmail" required /></div>
+            <div class="field"><label for="signupPassword">Password</label><input type="password" id="signupPassword" required minlength="6" /></div>
+            <button type="submit" class="btn-primary" id="signupSubmit">Sign up</button>
+          </form>
+        </div>
       </div>
 
-      <!-- Signup panel -->
-      <div class="auth-panel" id="panelSignup">
-        <h2 class="auth-title">Create an account</h2>
-        <p class="auth-sub">Save your info for faster bookings next time.</p>
-        <div class="auth-error" id="signupError">This is a placeholder signup — no accounts are wired up yet.</div>
-        <form id="signupForm">
-          <div class="field">
-            <label for="signupName">Full name</label>
-            <input type="text" id="signupName" required />
-          </div>
-          <div class="field">
-            <label for="signupEmail">Email</label>
-            <input type="email" id="signupEmail" required />
-          </div>
-          <div class="field">
-            <label for="signupPassword">Password</label>
-            <input type="password" id="signupPassword" required />
-          </div>
-          <button type="submit" class="btn-primary">Sign up</button>
-        </form>
-      </div>
     </div>
   </div>
 
+  <script src="supabase-config.js"></script>
   <script>
-    // NOTE: This is a front-end-only placeholder. There's no real backend,
-    // database, or auth check here yet — submitting just shows a message.
-    // To make this a working login you'll need a backend (sessions/JWT) and
-    // a place to store user records.
     const tabLogin = document.getElementById('tabLogin');
     const tabSignup = document.getElementById('tabSignup');
     const panelLogin = document.getElementById('panelLogin');
     const panelSignup = document.getElementById('panelSignup');
 
-    tabLogin.addEventListener('click', function () {
-      tabLogin.classList.add('active');
-      tabSignup.classList.remove('active');
-      panelLogin.classList.add('active');
-      panelSignup.classList.remove('active');
+    tabLogin.addEventListener('click', () => {
+      tabLogin.classList.add('active'); tabSignup.classList.remove('active');
+      panelLogin.classList.add('active'); panelSignup.classList.remove('active');
     });
-    tabSignup.addEventListener('click', function () {
-      tabSignup.classList.add('active');
-      tabLogin.classList.remove('active');
-      panelSignup.classList.add('active');
-      panelLogin.classList.remove('active');
+    tabSignup.addEventListener('click', () => {
+      tabSignup.classList.add('active'); tabLogin.classList.remove('active');
+      panelSignup.classList.add('active'); panelLogin.classList.remove('active');
     });
 
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    function showMessage(el, text, type) {
+      el.textContent = text;
+      el.className = 'auth-message visible ' + type;
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      document.getElementById('loginError').classList.add('visible');
+      const btn = document.getElementById('signupSubmit');
+      btn.disabled = true;
+      const name = document.getElementById('signupName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const { error } = await supabaseClient.auth.signUp({
+        email, password,
+        options: { data: { full_name: name } }
+      });
+      btn.disabled = false;
+      const msg = document.getElementById('signupMessage');
+      if (error) { showMessage(msg, error.message, 'error'); return; }
+      showMessage(msg, "Account created! Check your email to confirm, then log in.", 'success');
     });
-    document.getElementById('signupForm').addEventListener('submit', function (e) {
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      document.getElementById('signupError').classList.add('visible');
+      const btn = document.getElementById('loginSubmit');
+      btn.disabled = true;
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      btn.disabled = false;
+      const msg = document.getElementById('loginMessage');
+      if (error) { showMessage(msg, error.message, 'error'); return; }
+      window.location.reload();
     });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    });
+
+    // On page load, check if someone's already signed in
+    (async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        document.getElementById('loggedOutPanels').style.display = 'none';
+        document.getElementById('signedInPanel').classList.add('active');
+        document.getElementById('signedInEmail').textContent = session.user.email;
+
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('role, full_name')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile && profile.full_name) {
+          document.getElementById('signedInName').textContent = 'Welcome back, ' + profile.full_name;
+        }
+        if (profile && profile.role === 'manager') {
+          document.getElementById('managerLink').style.display = 'block';
+        }
+      }
+    })();
   </script>
 </body>
 </html>
