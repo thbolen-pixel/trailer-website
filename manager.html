@@ -38,6 +38,7 @@
     .tag { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
     .tag.blocked { background: rgba(74,85,104,0.12); color: var(--slate); }
     .tag.booking { background: rgba(200,137,58,0.15); color: var(--amber); }
+    .tag.outdoorsy { background: rgba(30,58,18,0.12); color: var(--forest); }
     .del-btn { background: none; border: none; color: #8a3020; font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
     .form-status { display: none; font-size: 0.85rem; padding: 0.6rem 0.8rem; border-radius: 7px; margin-bottom: 1rem; }
     .form-status.visible { display: block; }
@@ -77,6 +78,24 @@
     </div>
 
     <div class="card">
+      <h2>Outdoorsy Calendar Sync</h2>
+      <p style="font-size: 0.88rem; color: var(--slate-light); margin-bottom: 1rem;">Runs automatically once a day. You can also trigger it manually any time.</p>
+      <div class="form-status" id="syncStatus"></div>
+      <button class="btn-primary" id="syncNowBtn">Sync Now</button>
+    </div>
+
+    <div class="card">
+      <h2>Not Yet Updated on Outdoorsy</h2>
+      <p style="font-size: 0.88rem; color: var(--slate-light); margin-bottom: 1rem;">Changes made on this site that still need to be copied over to your Outdoorsy listing by hand.</p>
+      <div class="form-status" id="updateStatus"></div>
+      <form id="updateForm" style="display:flex; gap: 0.6rem; margin-bottom: 1.25rem;">
+        <input type="text" id="updateDescription" placeholder="e.g. Price changed to $115/night" style="flex:1; padding: 0.65rem 0.8rem; border: 1px solid rgba(30,58,18,0.2); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.9rem; background: var(--cream); color: var(--forest);" required />
+        <button type="submit" class="btn-primary">Log It</button>
+      </form>
+      <div id="pendingUpdatesList"></div>
+    </div>
+
+    <div class="card">
       <h2>Upcoming Bookings &amp; Blocks</h2>
       <div id="upcomingList"></div>
     </div>
@@ -112,6 +131,7 @@
       document.getElementById('managerContent').style.display = 'block';
       await loadUpcoming();
       await loadThreads();
+      await loadPendingUpdates();
     }
 
     let activeThreadUserId = null;
@@ -204,7 +224,7 @@
     async function loadUpcoming() {
       const { data, error } = await supabaseClient
         .from('bookings')
-        .select('id, start_date, end_date, guest_name, notes, is_blocked')
+        .select('id, start_date, end_date, guest_name, notes, is_blocked, source')
         .gte('end_date', new Date().toISOString().slice(0, 10))
         .order('start_date');
 
@@ -216,15 +236,20 @@
       data.forEach(row => {
         const div = document.createElement('div');
         div.className = 'list-row';
-        const label = row.is_blocked
-          ? (row.notes || 'Blocked')
-          : (row.guest_name || 'Guest booking');
-        const tag = row.is_blocked
-          ? '<span class="tag blocked">Blocked</span>'
-          : '<span class="tag booking">Booking</span>';
+        let label, tag;
+        if (row.source === 'outdoorsy') {
+          label = 'Outdoorsy booking';
+          tag = '<span class="tag outdoorsy">Outdoorsy</span>';
+        } else if (row.is_blocked) {
+          label = row.notes || 'Blocked';
+          tag = '<span class="tag blocked">Blocked</span>';
+        } else {
+          label = row.guest_name || 'Guest booking';
+          tag = '<span class="tag booking">Booking</span>';
+        }
         div.innerHTML = `
           <span>${tag} ${row.start_date} \u2192 ${row.end_date} — ${label}</span>
-          ${row.is_blocked ? `<button class="del-btn" data-id="${row.id}">Remove</button>` : ''}
+          ${row.is_blocked && row.source !== 'outdoorsy' ? `<button class="del-btn" data-id="${row.id}">Remove</button>` : ''}
         `;
         list.appendChild(div);
       });
@@ -258,6 +283,72 @@
         await loadUpcoming();
       }
     });
+
+    document.getElementById('syncNowBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('syncNowBtn');
+      const statusEl = document.getElementById('syncStatus');
+      btn.disabled = true;
+      btn.textContent = 'Syncing...';
+      try {
+        const res = await fetch('/api/sync-outdoorsy');
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Sync failed.');
+        statusEl.textContent = `Synced ${result.synced} booking(s), removed ${result.removed} stale block(s).`;
+        statusEl.className = 'form-status visible success';
+        await loadUpcoming();
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = 'form-status visible error';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Sync Now';
+    });
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('updateDescription');
+      const statusEl = document.getElementById('updateStatus');
+      const { error } = await supabaseClient.from('site_updates').insert({ description: input.value });
+      if (error) {
+        statusEl.textContent = error.message;
+        statusEl.className = 'form-status visible error';
+      } else {
+        input.value = '';
+        statusEl.className = 'form-status';
+        await loadPendingUpdates();
+      }
+    });
+
+    async function loadPendingUpdates() {
+      const { data, error } = await supabaseClient
+        .from('site_updates')
+        .select('id, description, created_at')
+        .eq('synced', false)
+        .order('created_at', { ascending: false });
+
+      const list = document.getElementById('pendingUpdatesList');
+      if (error) { list.textContent = 'Could not load updates.'; return; }
+      if (!data.length) { list.innerHTML = '<p style="color: var(--slate-light); font-size: 0.9rem;">Nothing pending — everything is up to date on Outdoorsy.</p>'; return; }
+
+      list.innerHTML = '';
+      data.forEach(row => {
+        const div = document.createElement('div');
+        div.className = 'list-row';
+        const date = new Date(row.created_at).toLocaleDateString();
+        div.innerHTML = `<span>${row.description} <span style="color: var(--slate-light); font-size: 0.78rem;">(${date})</span></span>
+          <button class="del-btn" data-id="${row.id}">Mark Updated</button>`;
+        list.appendChild(div);
+      });
+
+      list.querySelectorAll('.del-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await supabaseClient.from('site_updates')
+            .update({ synced: true, synced_at: new Date().toISOString() })
+            .eq('id', btn.dataset.id);
+          await loadPendingUpdates();
+        });
+      });
+    }
 
     init();
   </script>
